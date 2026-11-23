@@ -1,0 +1,21 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: dataeng-hadoop
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/training-sh/openshift-sandbox.git
+    contextDir: hadoop-image
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: dataeng-hadoop:3.3.6-1
+  completionDeadlineSeconds: 1800
+  successfulBuildsHistoryLimit: 1
+  failedBuildsHistoryLimit: 1

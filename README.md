@@ -18,5 +18,6 @@ git pull --ff-only origin main
 4. [00-setup](00-setup/README.md) — deploy PostgreSQL, SeaweedFS, and Polaris, then open the HTTPS Routes for JupyterLab, SeaweedFS Admin, and Spark Master.
 5. [01-spark-basic](01-spark-basic/README.md) — run a Spark DataFrame and SQL notebook in JupyterLab.
 6. [02-spark-icebeg-polaris](02-spark-icebeg-polaris/README.md) — write and read an Iceberg table from a notebook using Spark and Polaris.
+7. [HDFS and Hive Metastore](40-hdfs-hive/README.md) — build both images, reuse the MySQL backend, and query HDFS-backed tables from Spark.
 
-The [manifests directory](manifests) contains one OpenShift resource per YAML file. Follow each guide's import order. MySQL is independent. Before using JupyterLab or Spark, [build the Spark image from GitHub](spark-image/README.md). The full stack uses four PVCs totaling 6 GiB, including 1 GiB for notebooks.
+The [manifests directory](manifests) contains one OpenShift resource per YAML file. Follow each guide's import order. Before using JupyterLab or Spark, [build the Spark image from GitHub](spark-image/README.md). The base stack uses 6 GiB of persistent storage. HDFS adds one 2 GiB claim, and Hive Metastore reuses the MySQL claim.

@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spark-hdfs-hive-code
+data:
+  verify.py: |
+    from pyspark.sql import SparkSession
+
+    hdfs = "hdfs://namenode:9000"
+    metastore = "thrift://hive-metastore:9083"
+    spark = (SparkSession.builder
+             .appName("hdfs-hive-lab")
+             .master("local[1]")
+             .config("spark.ui.enabled", "false")
+             .config("spark.sql.shuffle.partitions", "1")
+             .config("spark.hadoop.dfs.client.use.datanode.hostname", "true")
+             .config("spark.hadoop.hive.metastore.uris", metastore)
+             .config("spark.sql.warehouse.dir", hdfs + "/user/hive/warehouse")
+             .enableHiveSupport()
+             .getOrCreate())
+    try:
+        parquet_path = hdfs + "/lab/hdfs-hive/numbers"
+        spark.range(3).write.mode("overwrite").parquet(parquet_path)
+        assert spark.read.parquet(parquet_path).count() == 3
+
+        spark.sql(f"CREATE DATABASE IF NOT EXISTS hdfs_demo LOCATION '{hdfs}/lab/hdfs-hive/warehouse'")
+        spark.sql("CREATE TABLE IF NOT EXISTS hdfs_demo.orders (id BIGINT) USING PARQUET")
+        spark.sql("INSERT OVERWRITE TABLE hdfs_demo.orders SELECT CAST(1 AS BIGINT)")
+        result = spark.table("hdfs_demo.orders")
+        result.show()
+        assert [row.id for row in result.collect()] == [1]
+        assert result.inputFiles() and all(path.startswith(hdfs + "/") for path in result.inputFiles())
+        print("SPARK_HDFS_HIVE_PASS")
+    finally:
+        spark.stop()

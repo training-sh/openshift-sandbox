@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hdfs
+spec:
+  serviceName: namenode
+  replicas: 1
+  selector:
+    matchLabels: &id001
+      app: hdfs
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: namenode
+        image: dataeng-hadoop:3.3.6-1
+        args:
+        - namenode
+        env: &id002
+        - name: HADOOP_HEAPSIZE_MAX
+          value: '256'
+        - name: HADOOP_HEAPSIZE_MIN
+          value: '128'
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - &id003
+          name: hadoop-config
+          mountPath: /etc/hadoop-lab
+          readOnly: true
+        - &id004
+          name: data
+          mountPath: /data
+        ports:
+        - name: rpc
+          containerPort: 9000
+        - name: web
+          containerPort: 9870
+        startupProbe:
+          tcpSocket:
+            port: rpc
+          periodSeconds: 5
+          failureThreshold: 90
+        readinessProbe:
+          tcpSocket:
+            port: rpc
+          periodSeconds: 5
+      - name: datanode
+        image: dataeng-hadoop:3.3.6-1
+        args:
+        - datanode
+        env: *id002
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - *id003
+        - *id004
+        ports:
+        - name: data
+          containerPort: 9866
+        startupProbe:
+          tcpSocket:
+            port: data
+          periodSeconds: 5
+          failureThreshold: 90
+        readinessProbe:
+          tcpSocket:
+            port: data
+          periodSeconds: 5
+      volumes:
+      - name: hadoop-config
+        configMap:
+          name: hdfs-config
+      - name: data
+        persistentVolumeClaim:
+          claimName: hdfs-data

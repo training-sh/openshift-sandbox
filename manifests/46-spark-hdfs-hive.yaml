@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spark-hdfs-hive
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: spark
+        image: dataeng-spark:3.5.9-5
+        command:
+        - /opt/spark/bin/spark-submit
+        args:
+        - --master
+        - local[1]
+        - --driver-memory
+        - 512m
+        - --conf
+        - spark.ui.enabled=false
+        - --conf
+        - spark.sql.shuffle.partitions=1
+        - /lab/verify.py
+        env:
+        - name: SPARK_USER
+          value: team
+        - name: SPARK_LOCAL_IP
+          value: 127.0.0.1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 640Mi
+          limits:
+            cpu: '1'
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: code
+          mountPath: /lab
+          readOnly: true
+      volumes:
+      - name: code
+        configMap:
+          name: spark-hdfs-hive-code

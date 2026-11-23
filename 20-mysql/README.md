@@ -1,6 +1,6 @@
 # 20 — Deploy MySQL
 
-Complete [00-get-started](../00-get-started/README.md) and open your assigned OpenShift project in the browser. This lab deploys one MySQL pod, an internal Service, and a 1 GiB storage claim.
+Complete [00-get-started](../00-get-started/README.md) and open your assigned OpenShift project in the browser. This lab deploys one MySQL pod, an internal Service, and a 1 GiB storage claim. The pod is capped at 250m CPU and 512 MiB of memory.
 
 ## Import the YAML
 
