@@ -59,6 +59,34 @@ ls manifests
 
 To deploy from the browser, open [manifests](../manifests) on GitHub and follow **Import a manifest** above.
 
+## Apply the setup YAML from Web Terminal
+
+Run these commands from the cloned `openshift-sandbox` directory. Use your assigned project in Developer Sandbox. On a cluster where you have permission to create projects, you can create `bigdata` with `oc apply -f manifests/00-project.yaml`. The [project manifest](../manifests/00-project.yaml) is cluster-scoped.
+
+```bash
+PROJECT='your-project-name'
+oc project "$PROJECT"
+
+oc apply -n "$PROJECT" -f manifests/01-config.yaml
+oc apply -n "$PROJECT" -f manifests/02-lab-secret.yaml
+oc apply -n "$PROJECT" -f manifests/02-seaweedfs-secret.yaml
+oc apply -n "$PROJECT" -f manifests/03-workload-account.yaml
+
+oc get configmap,secret,serviceaccount -n "$PROJECT"
+```
+
+For MySQL, apply its Secret, Service, PVC, and StatefulSet in that order. MySQL needs the shared service account above. You can skip the shared ConfigMap and the other two Secrets if you are deploying only MySQL.
+
+```bash
+oc apply -n "$PROJECT" -f manifests/02-mysql-secret.yaml
+oc apply -n "$PROJECT" -f manifests/20-mysql-service.yaml
+oc apply -n "$PROJECT" -f manifests/20-mysql-pvc.yaml
+oc apply -n "$PROJECT" -f manifests/20-mysql.yaml
+oc rollout status statefulset/mysql -n "$PROJECT" --timeout=10m
+```
+
+See [MySQL](../20-mysql/README.md) for verification and [Storage and Polaris setup](../00-setup/README.md) for the remaining import order.
+
 ## References
 
 - [Red Hat’s guide to accessing the Developer Sandbox](https://developers.redhat.com/articles/2023/03/30/how-access-developer-sandbox-red-hat-openshift)
