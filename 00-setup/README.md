@@ -63,30 +63,17 @@ Complete the [Spark image build](../spark-image/README.md) before deploying Jupy
 
 ### JupyterLab
 
-1. Paste [31-jupyter-secret.yaml](../manifests/31-jupyter-secret.yaml) into **Import YAML**. Replace `REPLACE_WITH_PRIVATE_JUPYTER_TOKEN` with a long private token before selecting **Create**. Keep that token for the sign-in page.
+1. Import [31-jupyter-secret.yaml](../manifests/31-jupyter-secret.yaml). It sets the lab token to `team1234`.
 2. Import [31-jupyter-pvc.yaml](../manifests/31-jupyter-pvc.yaml), [31-jupyter-service.yaml](../manifests/31-jupyter-service.yaml), and [31-jupyter.yaml](../manifests/31-jupyter.yaml).
 3. Wait for **Workloads → Deployments → spark-jupyter** to show one ready replica. Import [31-jupyter-route.yaml](../manifests/31-jupyter-route.yaml).
-4. Open **Networking → Routes → spark-jupyter** and click **Location**. Paste your token into the JupyterLab sign-in form.
+4. Open **Networking → Routes → spark-jupyter** and click **Location**. Enter `team1234` in the JupyterLab sign-in form.
 
 JupyterLab saves your notebooks on the `spark-jupyter-notebooks` PVC. Open the [Spark Basics notebook guide](../01-spark-basic/README.md) for the first exercise.
 
-For Web Terminal, enter a private Jupyter token of at least 32 letters or digits when prompted. The command applies the Secret without editing the repository file.
+From Web Terminal:
 
 ```bash
-read -rsp 'Private Jupyter token: ' JUPYTER_TOKEN
-printf '\n'
-if [[ "$JUPYTER_TOKEN" =~ ^[A-Za-z0-9]{32,}$ ]]; then
-  sed "s/REPLACE_WITH_PRIVATE_JUPYTER_TOKEN/$JUPYTER_TOKEN/" manifests/31-jupyter-secret.yaml |
-    oc apply -n "$PROJECT" -f -
-else
-  printf 'Use at least 32 letters or digits and try again.\n'
-fi
-unset JUPYTER_TOKEN
-```
-
-After the Secret is created, run:
-
-```bash
+oc apply -n "$PROJECT" -f manifests/31-jupyter-secret.yaml
 oc apply -n "$PROJECT" -f manifests/31-jupyter-pvc.yaml
 oc apply -n "$PROJECT" -f manifests/31-jupyter-service.yaml
 oc apply -n "$PROJECT" -f manifests/31-jupyter.yaml
@@ -94,6 +81,8 @@ oc rollout status -n "$PROJECT" deployment/spark-jupyter --timeout=10m &&
   oc apply -n "$PROJECT" -f manifests/31-jupyter-route.yaml
 oc get route spark-jupyter -n "$PROJECT"
 ```
+
+If JupyterLab is already running with an older token, restart it after applying the updated Secret with `oc rollout restart -n "$PROJECT" deployment/spark-jupyter`.
 
 ### SeaweedFS Admin UI
 

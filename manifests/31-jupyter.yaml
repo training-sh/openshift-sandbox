@@ -28,8 +28,8 @@ spec:
         - -ec
         args:
         - |
-          if [ -z "$JUPYTER_TOKEN" ] || [ "$JUPYTER_TOKEN" = REPLACE_WITH_PRIVATE_JUPYTER_TOKEN ]; then
-            echo "Set a private token in the spark-jupyter-login Secret."
+          if [ -z "$JUPYTER_TOKEN" ]; then
+            echo "Set a non-empty token in the spark-jupyter-login Secret."
             exit 1
           fi
           exec jupyter lab --ip=0.0.0.0 --port=8888 --no-browser \
