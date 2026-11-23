@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lab-config
+data:
+  POLARIS_URL: http://polaris:8181
+  S3_ENDPOINT: http://seaweedfs:8333

@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-jupyter
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: spark-jupyter
+  template:
+    metadata:
+      labels:
+        app: spark-jupyter
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: jupyterlab
+        image: dataeng-spark:3.5.9-5
+        workingDir: /workspace
+        command:
+        - /bin/sh
+        - -ec
+        args:
+        - |
+          if [ -z "$JUPYTER_TOKEN" ] || [ "$JUPYTER_TOKEN" = REPLACE_WITH_PRIVATE_JUPYTER_TOKEN ]; then
+            echo "Set a private token in the spark-jupyter-login Secret."
+            exit 1
+          fi
+          exec jupyter lab --ip=0.0.0.0 --port=8888 --no-browser \
+            --ServerApp.root_dir=/workspace --ServerApp.allow_remote_access=True \
+            --ServerApp.trust_xheaders=True
+        envFrom:
+        - configMapRef:
+            name: lab-config
+        env:
+        - name: HOME
+          value: /workspace
+        - name: JUPYTER_RUNTIME_DIR
+          value: /tmp/jupyter-runtime
+        - name: JUPYTER_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: spark-jupyter-login
+              key: token
+        - name: SPARK_USER
+          value: team
+        - name: SPARK_LOCAL_IP
+          value: "127.0.0.1"
+        - name: PYSPARK_SUBMIT_ARGS
+          value: --driver-memory 512m pyspark-shell
+        - name: POLARIS_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: lab-credentials
+              key: polaris-client-id
+        - name: POLARIS_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: lab-credentials
+              key: polaris-client-secret
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: lab-credentials
+              key: s3-access-key
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: lab-credentials
+              key: s3-secret-key
+        ports:
+        - name: jupyter
+          containerPort: 8888
+        readinessProbe:
+          tcpSocket:
+            port: jupyter
+        resources:
+          requests:
+            cpu: 100m
+            memory: 640Mi
+          limits:
+            cpu: 750m
+            memory: 1536Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        volumeMounts:
+        - name: notebooks
+          mountPath: /workspace
+      volumes:
+      - name: notebooks
+        persistentVolumeClaim:
+          claimName: spark-jupyter-notebooks

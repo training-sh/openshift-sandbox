@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spark-basic-code
+data:
+  orders.py: |
+    from pyspark.sql import SparkSession, functions as F
+
+    spark = SparkSession.builder.appName("spark-basics").getOrCreate()
+
+    try:
+        orders = spark.createDataFrame(
+            [(1, "books", 1200), (2, "books", 800), (3, "games", 2500), (4, "games", 400)],
+            "order_id INT, category STRING, amount_cents INT",
+        )
+
+        totals = (
+            orders.filter(F.col("amount_cents") >= 1000)
+            .groupBy("category")
+            .agg(F.sum("amount_cents").alias("total_cents"))
+            .orderBy("category")
+        )
+        totals.show()
+
+        orders.createOrReplaceTempView("orders")
+        spark.sql("""
+            SELECT category, COUNT(*) AS order_count
+            FROM orders
+            GROUP BY category
+            ORDER BY category
+        """).show()
+
+        assert [(row.category, row.total_cents) for row in totals.collect()] == [
+            ("books", 1200), ("games", 2500)
+        ]
+        print("SPARK_BASIC_PASS", flush=True)
+    finally:
+        spark.stop()

@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spark-iceberg-lab
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 600
+  template:
+    spec:
+      serviceAccountName: olist-workloads
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: spark
+        image: dataeng-spark:3.5.9-5
+        command:
+        - /opt/spark/bin/spark-submit
+        args:
+        - --master
+        - local[1]
+        - --driver-memory
+        - 512m
+        - --conf
+        - spark.ui.enabled=false
+        - --conf
+        - spark.sql.shuffle.partitions=1
+        - /lab/lab.py
+        envFrom:
+        - configMapRef:
+            name: lab-config
+        env:
+        - name: SPARK_USER
+          value: team
+        - name: SPARK_LOCAL_IP
+          value: "127.0.0.1"
+        - name: POLARIS_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: lab-credentials
+              key: polaris-client-id
+        - name: POLARIS_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: lab-credentials
+              key: polaris-client-secret
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: lab-credentials
+              key: s3-access-key
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: lab-credentials
+              key: s3-secret-key
+        resources:
+          requests:
+            cpu: 100m
+            memory: 640Mi
+          limits:
+            cpu: '1'
+            memory: 1Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: lab
+          mountPath: /lab
+          readOnly: true
+      volumes:
+      - name: lab
+        configMap:
+          name: spark-iceberg-lab

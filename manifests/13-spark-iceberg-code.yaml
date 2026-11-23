@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spark-iceberg-lab
+data:
+  lab.py: |
+    import json
+    import os
+    from urllib.error import HTTPError
+    from urllib.parse import urlencode
+    from urllib.request import Request, urlopen
+
+    from pyspark.sql import SparkSession
+
+    base = os.environ["POLARIS_URL"]
+    client_id = os.environ["POLARIS_CLIENT_ID"]
+    client_secret = os.environ["POLARIS_CLIENT_SECRET"]
+    endpoint = os.environ["S3_ENDPOINT"]
+    token_url = base + "/api/catalog/v1/oauth/tokens"
+    token_request = Request(
+        token_url,
+        data=urlencode({
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "scope": "PRINCIPAL_ROLE:ALL",
+        }).encode(),
+        headers={"Polaris-Realm": "POLARIS"},
+    )
+    with urlopen(token_request, timeout=30) as response:
+        token = json.load(response)["access_token"]
+    headers = {"Polaris-Realm": "POLARIS", "Authorization": "Bearer " + token}
+    catalogs = base + "/api/management/v1/catalogs"
+    try:
+        with urlopen(Request(catalogs + "/training", headers=headers), timeout=30):
+            pass
+    except HTTPError as error:
+        if error.code != 404:
+            raise
+        location = "s3://warehouse/iceberg"
+        catalog = {
+            "name": "training",
+            "type": "INTERNAL",
+            "properties": {"default-base-location": location},
+            "storageConfigInfo": {
+                "storageType": "S3",
+                "allowedLocations": [location],
+                "region": "us-east-1",
+                "endpoint": endpoint,
+                "endpointInternal": endpoint,
+                "pathStyleAccess": True,
+                "stsUnavailable": True,
+            },
+        }
+        request = Request(
+            catalogs,
+            data=json.dumps({"catalog": catalog}).encode(),
+            headers={**headers, "Content-Type": "application/json"},
+        )
+        with urlopen(request, timeout=30):
+            pass
+
+    builder = SparkSession.builder.appName("spark-iceberg-lab")
+    builder = builder.config("spark.sql.catalog.polaris", "org.apache.iceberg.spark.SparkCatalog")
+    for key, value in {
+        "type": "rest",
+        "uri": base + "/api/catalog",
+        "warehouse": "training",
+        "credential": f"{client_id}:{client_secret}",
+        "rest.auth.type": "oauth2",
+        "rest-metrics-reporting-enabled": "false",
+        "scope": "PRINCIPAL_ROLE:ALL",
+        "oauth2-server-uri": token_url,
+        "header.Polaris-Realm": "POLARIS",
+        "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+        "s3.endpoint": endpoint,
+        "s3.path-style-access": "true",
+        "client.region": "us-east-1",
+    }.items():
+        builder = builder.config(f"spark.sql.catalog.polaris.{key}", value)
+
+    spark = builder.getOrCreate()
+    try:
+        spark.sql("CREATE NAMESPACE IF NOT EXISTS polaris.sandbox")
+        spark.sql("CREATE TABLE IF NOT EXISTS polaris.sandbox.demo (id BIGINT) USING iceberg")
+        spark.sql("INSERT OVERWRITE polaris.sandbox.demo SELECT CAST(1 AS BIGINT)")
+        result = spark.sql("SELECT id FROM polaris.sandbox.demo")
+        result.show()
+        rows = result.collect()
+        if [row.id for row in rows] != [1]:
+            raise RuntimeError("Unexpected Iceberg table contents")
+        print("SPARK_ICEBERG_PASS", flush=True)
+    finally:
+        spark.stop()

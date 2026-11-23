@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-master
+  template:
+    metadata:
+      labels:
+        app: spark-master
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: spark-master
+        image: dataeng-spark:3.5.9-5
+        command: [/opt/spark/bin/spark-class]
+        args:
+        - org.apache.spark.deploy.master.Master
+        - --host
+        - '$(POD_IP)'
+        - --webui-port
+        - '8080'
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: SPARK_DAEMON_MEMORY
+          value: 256m
+        - name: SPARK_MASTER_OPTS
+          value: '-Dspark.master.rest.enabled=false -Dspark.ui.killEnabled=false'
+        ports:
+        - name: ui
+          containerPort: 8080
+        readinessProbe:
+          tcpSocket:
+            port: ui
+        resources:
+          requests:
+            cpu: 25m
+            memory: 256Mi
+          limits:
+            cpu: 250m
+            memory: 384Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]

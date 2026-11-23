@@ -1,0 +1,6 @@
+# Reference for environments where you have permission to create a project.
+# In Developer Sandbox, select your assigned project and skip this file.
+apiVersion: project.openshift.io/v1
+kind: Project
+metadata:
+  name: bigdata

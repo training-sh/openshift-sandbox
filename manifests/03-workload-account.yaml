@@ -1,0 +1,5 @@
+# Adapted from tcs/capstone-developer/manifests for the assigned OpenShift project.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: olist-workloads

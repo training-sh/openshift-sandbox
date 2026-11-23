@@ -1,0 +1,13 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: seaweedfs-admin
+spec:
+  to:
+    kind: Service
+    name: seaweedfs
+  port:
+    targetPort: admin
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
