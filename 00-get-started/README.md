@@ -28,9 +28,27 @@ You’re ready when you can open **Topology** for your project. An empty Topolog
 
 In the **Administrator** perspective, use **Workloads → Pods** for pod status, logs, and events. Your project permissions also apply in this perspective.
 
+## Check quotas from Web Terminal
+
+Select your assigned project in the OpenShift console. In the top bar, click the **Web Terminal** icon (`>_`). If prompted, select your project and click **Start**. The browser opens a shell with `oc` available. [Red Hat Web Terminal guide](https://developers.redhat.com/articles/2024/09/02/explore-full-capabilities-web-terminal-operator)
+
+Replace `your-project-name` with the name shown in the project dropdown, then run:
+
+```bash
+PROJECT='your-project-name'
+oc get resourcequota -n "$PROJECT"
+oc describe quota -n "$PROJECT"
+oc get limitrange,pvc -n "$PROJECT"
+oc get pods -n "$PROJECT"
+```
+
+In `oc describe quota`, compare **Used** with **Hard** to see how much CPU, memory, or storage remains. To inspect one quota, use its name from `oc get resourcequota`, for example `oc describe quota compute-deploy -n "$PROJECT"` if that quota is listed.
+
+If Web Terminal is unavailable, open your project’s **Quota** page in the web console. Continue to use **Import YAML** for deployment. [Red Hat quota guide](https://docs.redhat.com/en/documentation/openshift_dedicated/4/epub/applications/working-with-quotas)
+
 ## Optional Git access
 
-If your console offers **Web Terminal**, open it in your assigned project. Run the commands below to clone the repository and find its manifests. [Red Hat Web Terminal guide](https://developers.redhat.com/articles/2024/09/02/explore-full-capabilities-web-terminal-operator)
+Run these commands in Web Terminal to clone the repository and find its manifests.
 
 ```bash
 git --version
