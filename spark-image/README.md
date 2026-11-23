@@ -7,6 +7,15 @@ Build this image once in your assigned OpenShift project before running the Spar
 3. In the **Administrator** perspective, open **Builds → BuildConfigs → dataeng-spark**. Select **Start Build** from **Actions**. Use the build's **Logs** tab to check progress and wait for **Complete**.
 4. Under **Builds → ImageStreams → dataeng-spark**, confirm the `3.5.9-5` tag appears. JupyterLab, Spark Master, and the Spark Jobs use this same-project image tag.
 
+From Web Terminal, run these commands in the cloned `openshift-sandbox` directory with `PROJECT` set to your assigned project:
+
+```bash
+oc apply -n "$PROJECT" -f manifests/07-spark-imagestream.yaml
+oc apply -n "$PROJECT" -f manifests/08-spark-build.yaml
+oc start-build -n "$PROJECT" dataeng-spark --follow
+oc get istag -n "$PROJECT" dataeng-spark:3.5.9-5
+```
+
 The build uses the pinned Spark 3.5.9 base from the CRC image, the same JAR versions (including Iceberg 1.10.0), and the CRC entrypoint. The sandbox lab Jobs call Spark directly so that the CRC storage and cluster defaults do not affect them. The build needs access to Docker Hub, Maven Central, PyPI, and the GitHub repository. Start the build from the console.
 
 [OpenShift BuildConfig reference](https://docs.redhat.com/en/documentation/openshift_container_platform/4.22/html-single/builds_using_buildconfig/index)

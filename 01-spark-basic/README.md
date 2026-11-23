@@ -14,6 +14,15 @@ The notebook uses one local Spark thread in the JupyterLab pod. It shows the fil
 2. Import [21-spark-basic.yaml](../manifests/21-spark-basic.yaml) to start the Job.
 3. In the **Administrator** perspective, open **Workloads → Pods** and select the pod whose name begins with `spark-basic-`. Open **Logs** and look for `SPARK_BASIC_PASS`.
 
+From Web Terminal, run these commands in the cloned `openshift-sandbox` directory with `PROJECT` set to your assigned project:
+
+```bash
+oc apply -n "$PROJECT" -f manifests/21-spark-basic-code.yaml
+oc apply -n "$PROJECT" -f manifests/21-spark-basic.yaml
+oc logs -n "$PROJECT" -f job/spark-basic --pod-running-timeout=5m
+oc wait -n "$PROJECT" --for=condition=complete job/spark-basic --timeout=5m
+```
+
 The Spark program builds a DataFrame from four orders, filters to orders worth at least 1,000 cents, and groups them by category. A separate Spark SQL query counts all orders through the temporary `orders` view.
 
 | Category | Filtered total in cents | Order count before filtering |

@@ -21,6 +21,19 @@ Use the same import steps for each file in the table.
 
 Use the project assigned to you during sign-in. The [project reference manifest](../manifests/00-project.yaml) is for environments with project creation permissions. If the shared service account already exists in your project, continue with the MySQL manifest.
 
+## Apply from Web Terminal
+
+To apply the same files from Web Terminal, run this from the cloned `openshift-sandbox` directory with `PROJECT` set to your assigned project:
+
+```bash
+oc apply -n "$PROJECT" -f manifests/02-mysql-secret.yaml
+oc apply -n "$PROJECT" -f manifests/03-workload-account.yaml
+oc apply -n "$PROJECT" -f manifests/20-mysql-service.yaml
+oc apply -n "$PROJECT" -f manifests/20-mysql-pvc.yaml
+oc apply -n "$PROJECT" -f manifests/20-mysql.yaml
+oc rollout status -n "$PROJECT" statefulset/mysql --timeout=10m
+```
+
 ## Verify MySQL
 
 1. In the **Administrator** perspective, open **Workloads → Pods** and select `mysql-0`. If you are in the Developer perspective, open **Topology**, select MySQL, and follow the pod link under **Resources**.
