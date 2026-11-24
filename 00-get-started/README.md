@@ -61,7 +61,7 @@ To deploy from the browser, open [manifests](../manifests) on GitHub and follow 
 
 ## Apply the setup YAML from Web Terminal
 
-Run these commands from the cloned `openshift-sandbox` directory. Use your assigned project in Developer Sandbox. On a cluster where you have permission to create projects, you can create `bigdata` with `oc apply -f manifests/00-project.yaml`. The [project manifest](../manifests/00-project.yaml) is cluster-scoped.
+Run these commands from the cloned `openshift-sandbox` directory. Developer Sandbox uses the existing project assigned to your account. Skip [00-project.yaml](../manifests/00-project.yaml), which is a reference for clusters that allow project creation.
 
 ```bash
 PROJECT='your-project-name'
