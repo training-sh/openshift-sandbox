@@ -99,11 +99,13 @@ oc apply -n "$PROJECT" -f manifests/30-seaweedfs-route.yaml
 oc get route seaweedfs-admin -n "$PROJECT"
 ```
 
-### Spark Master UI
+### Spark Master and Worker
 
 1. Import [30-spark-master.yaml](../manifests/30-spark-master.yaml), then [30-spark-master-service.yaml](../manifests/30-spark-master-service.yaml), then [30-spark-master-route.yaml](../manifests/30-spark-master-route.yaml).
 2. Wait for **Workloads → Deployments → spark-master** to show one ready replica.
 3. Open **Networking → Routes → spark-master-ui** and click its **Location** link.
+4. Import [30-spark-worker.yaml](../manifests/30-spark-worker.yaml). Wait for **Workloads → Deployments → spark-worker** to show one ready replica.
+5. Refresh the Spark Master UI and confirm it shows **one ALIVE worker** with **one core** and **512 MiB** of executor memory.
 
 ```bash
 oc apply -n "$PROJECT" -f manifests/30-spark-master-service.yaml
@@ -111,6 +113,11 @@ oc apply -n "$PROJECT" -f manifests/30-spark-master.yaml
 oc rollout status -n "$PROJECT" deployment/spark-master --timeout=10m &&
   oc apply -n "$PROJECT" -f manifests/30-spark-master-route.yaml
 oc get route spark-master-ui -n "$PROJECT"
+oc apply -n "$PROJECT" -f manifests/30-spark-worker.yaml
+oc rollout status -n "$PROJECT" deployment/spark-worker --timeout=10m
+oc logs -n "$PROJECT" deployment/spark-worker --tail=30
 ```
 
-The standalone dashboard starts with zero workers. The exercises use local-mode Jobs and report their output in pod logs. The dashboard has no sign-in, so delete its Route, Service, and Deployment from the console when the demo is over. You can also delete the SeaweedFS Route from **Networking → Routes** and keep the internal S3 service running.
+The worker registers at the internal address `spark://spark-master-ui:7077`. The public Route serves the dashboard on port 8080. The existing notebooks and Jobs use `local[1]`; they run inside their own pods. If no worker appears in the dashboard, check the worker logs for registration errors.
+
+The dashboard has no sign-in. When the demo is over, delete the worker and master Deployments, master Service, and master Route from the console. You can also delete the SeaweedFS Route from **Networking → Routes** and keep the internal S3 service running.

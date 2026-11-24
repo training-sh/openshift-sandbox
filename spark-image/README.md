@@ -5,7 +5,7 @@ Build this image once in your assigned OpenShift project before running the Spar
 1. Use [Import YAML](../00-get-started/README.md#import-a-manifest) to create the [Spark ImageStream](../manifests/07-spark-imagestream.yaml).
 2. Import the [Spark BuildConfig](../manifests/08-spark-build.yaml). It points to the `spark-image` directory in this repository. If access to the repository requires authentication, configure a Git source Secret and set `spec.source.sourceSecret.name` before importing.
 3. In the **Administrator** perspective, open **Builds → BuildConfigs → dataeng-spark**. Select **Start Build** from **Actions**. Use the build's **Logs** tab to check progress and wait for **Complete**.
-4. Under **Builds → ImageStreams → dataeng-spark**, confirm the `3.5.9-5` tag appears. JupyterLab, Spark Master, and the Spark Jobs use this same-project image tag.
+4. Under **Builds → ImageStreams → dataeng-spark**, confirm the `3.5.9-5` tag appears. JupyterLab, Spark Master, Spark Worker, and the Spark Jobs use this same-project image tag.
 
 ## Build from Web Terminal
 

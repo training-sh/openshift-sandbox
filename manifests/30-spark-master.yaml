@@ -25,6 +25,8 @@ spec:
         - org.apache.spark.deploy.master.Master
         - --host
         - '$(POD_IP)'
+        - --port
+        - '7077'
         - --webui-port
         - '8080'
         env:
@@ -37,6 +39,8 @@ spec:
         - name: SPARK_MASTER_OPTS
           value: '-Dspark.master.rest.enabled=false -Dspark.ui.killEnabled=false'
         ports:
+        - name: rpc
+          containerPort: 7077
         - name: ui
           containerPort: 8080
         readinessProbe:

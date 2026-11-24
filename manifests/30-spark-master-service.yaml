@@ -6,6 +6,9 @@ spec:
   selector:
     app: spark-master
   ports:
+  - name: rpc
+    port: 7077
+    targetPort: rpc
   - name: ui
     port: 8080
     targetPort: ui
